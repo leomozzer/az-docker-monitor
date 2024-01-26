@@ -13,12 +13,12 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
-    # volumes:
-    #   - grafana_data:/var/lib/grafana
-    #   - ./grafana/datasources:/etc/grafana/datasources
-    #   - ./grafana/dashboards:/etc/grafana/dashboards
-    #   - ./grafana/setup.sh:/setup.sh
-    # entrypoint: ./grafana/setup.sh
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/datasources:/etc/grafana/datasources
+      - ./grafana/dashboards:/etc/grafana/dashboards
+      #- ./grafana/setup.sh:/setup.sh
+    #entrypoint: ./grafana/setup.sh
     environment:
       - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
@@ -28,18 +28,6 @@ services:
       - 3000
     ports:
       - 3000:3000
-    networks:
-      - monitor-net
-
-  app:
-    container_name: app
-    build:
-      context: ./app
-      dockerfile: Dockerfile
-    expose:
-      - 8080
-    ports:
-      - "8080:8080"
     networks:
       - monitor-net
 
@@ -56,10 +44,22 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--storage.tsdb.retention=200h'
       - '--web.enable-lifecycle'
-    # restart: unless-stopped
+    restart: unless-stopped
     expose:
       - 9090
     ports:
       - "9090:9090"
+    networks:
+      - monitor-net
+
+  app:
+    container_name: app
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    expose:
+      - 8080
+    ports:
+      - "8080:8080"
     networks:
       - monitor-net

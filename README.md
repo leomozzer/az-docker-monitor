@@ -77,3 +77,6 @@ This repository will be used as base to start a new terraform project or even us
 
 ## Configuring
 - Create 
+
+## References
+- https://aristides.dev/monitorando-seus-servidores-com-grafana-e-prometheus/
