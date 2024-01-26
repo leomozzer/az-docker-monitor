@@ -74,3 +74,6 @@ This repository will be used as base to start a new terraform project or even us
    - ARM_CLIENT_SECRET
    - ARM_SUBSCRIPTION_ID
    - ARM_TENANT_ID
+
+## Configuring
+- Create 
