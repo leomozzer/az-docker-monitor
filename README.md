@@ -76,7 +76,77 @@ This repository will be used as base to start a new terraform project or even us
    - ARM_TENANT_ID
 
 ## Configuring
-- Create 
+- Run `docker-compose up --build` to validate if the services are running correctly
+- Create an Azure container registry with:
+```bash
+az group create --name rg-acr-prod --location eastus
+az acr create --resource-group rg-acr-prod --name acrleomozzerprod --sku Basic
+az acr login --name acrleomozzerprod
+
+az network vnet create --resource-group rg-acr-prod --name vnet-eus-spoke-application-01
+az network vnet subnet create --resource-group rg-vnet-eus-spoke-application-01 --vnet-name vnet-eus-spoke-application-01 --name snet-application-01 --address-prefixes 10.0.16.0/24
+
+az network lb create \
+  --resource-group rg-acr-prod \
+  --name myLoadBalancer \
+  --frontend-ip-name myFrontend \
+  --backend-pool-name myBackendPool \
+  --vnet-name vnet-eus-spoke-application-01 \
+  --subnet load-balancer
+
+az network public-ip create \
+  --resource-group rg-acr-prod \
+  --name myPublicIP \
+  --allocation-method Static
+
+docker tag node acrleomozzerprod.azurecr.io/app:latest
+docker push acrleomozzerprod.azurecr.io/app:latest
+az container create \
+  --resource-group rg-acr-prod \
+  --name app \
+  --image acrleomozzerprod.azurecr.io/app:latest \
+  --cpu 1 \
+  --memory 1 \
+  --ports 8080 \
+  --vnet vnet-eus-spoke-application-01 \
+  --subnet snet-application-01 
+
+az network application-gateway create --name myAppGateway --location eastus --resource-group rg-acr-prod --capacity 2 --sku Standard_v2 --http-settings-protocol http --public-ip-address myPublicIP --vnet-name vnet-eus-spoke-application-01 --subnet load-balancer --servers 10.0.0.4 --priority 100
+
+docker tag prom/prometheus acrleomozzerprod.azurecr.io/prometheus:latest
+docker push acrleomozzerprod.azurecr.io/prometheus:latest
+az container create \
+  --resource-group rg-acr-prod \
+  --name prometheus \
+  --image acrleomozzerprod.azurecr.io/prometheus:latest \
+  --cpu 1 \
+  --memory 1 \
+  --ports 9090 \
+  --vnet vnet-eus-spoke-application-01 \
+  --subnet snet-application-01 
+
+az container restart --resource-group rg-acr-prod --name prometheus --image acrleomozzerprod.azurecr.io/prometheus:latest
+
+az network application-gateway http-listener create \
+  --resource-group rg-acr-prod \
+  --gateway-name myAppGateway \
+  --name prometheus \
+  --frontend-ip-name myPublicIP \
+  --frontend-port 9090 \
+  --protocol Http
+
+docker tag grafana/grafana acrleomozzerprod.azurecr.io/grafana:latest
+docker push acrleomozzerprod.azurecr.io/grafana:latest
+az container create \
+  --resource-group rg-acr-prod \
+  --name grafana \
+  --image acrleomozzerprod.azurecr.io/grafana:latest \
+  --cpu 1 \
+  --memory 1 \
+  --ports 3000 \
+  --ip-address public
+```
 
 ## References
+- https://github.com/evandroferreiras/prometheus_tutorial/tree/master
 - https://aristides.dev/monitorando-seus-servidores-com-grafana-e-prometheus/
