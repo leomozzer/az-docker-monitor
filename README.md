@@ -98,22 +98,17 @@ az network public-ip create --resource-group rg-eus-app-01 --name pip-eus-apgw-0
 az network application-gateway create --name apgw-eus-app-01 --location eastus --resource-group rg-eus-app-01 --capacity 2 --sku Standard_v2 --http-settings-protocol http --public-ip-address pip-eus-apgw-01 --vnet-name vnet-eus-spoke-application-01 --subnet snet-apgw-01 --servers 10.0.0.4 --priority 100 --http-settings-port 8080
 
 az storage account create --resource-group rg-eus-app-01 --name staeusapp --sku Standard_LRS --kind storagev2
-az storage share create --name prometheus --connection-string <connection-string>
 
-az storage file upload --share-name prometheus --source ./prometheus/prometheus.yml --path prometheus.yml --connection-string <connection-string>
+az storage account show-connection-string \
+  --resource-group rg-eus-monitor-01 \
+  --name stacappmon \
+  --output table
 
-az container create -g rg-eus-app-01 --name aci-prometheus-01 --image prom/prometheus:latest --command-line "cat /prometheus/prometheus.yml" --azure-file-volume-share-name prometheus --azure-file-volume-account-name staeusapp --azure-file-volume-account-key "<account-key>" --azure-file-volume-mount-path /prometheus/prometheus.yml
+az storage share create --name prometheus --connection-string "<>"
 
-az container create \
-  --resource-group rg-eus-app-01  \
-  --name aci-prometheus-02 \
-  --image acrleomozzerprod.azurecr.io/prometheus:latest \
-  --cpu 1 \
-  --memory 1 \
-  --ports 9090 \
-  --vnet vnet-eus-spoke-application-01 \
-  --subnet snet-application-01 
+az storage file upload --share-name prometheus --source ./prometheus/prometheus.yml --path prometheus.yml --connection-string "<>"
 
+az container create -g rg-eus-app-01 --name aci-prometheus-01 --image prom/prometheus:latest --azure-file-volume-share-name prometheus --azure-file-volume-account-name staeusapp --azure-file-volume-account-key "<>" --azure-file-volume-mount-path /etc/prometheus --cpu 1 --memory 1 --ports 9090 --vnet vnet-eus-spoke-application-01 --subnet snet-application-01
 
 az network nsg create --resource-group rg-eus-app-01 --name nsg-eus-app-01
 
