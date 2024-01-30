@@ -2,7 +2,7 @@
 WORKING_DIR=./terraform-live
 ENVIRONMENT=prod
 PLAN_FILE=$ENVIRONMENT.plan
-STORAGE_ACCOUNT_NAME=stac
+STORAGE_ACCOUNT_NAME="staclsomonitor"
 
 # Change to the Terraform directory
 cd $WORKING_DIR

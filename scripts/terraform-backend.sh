@@ -5,8 +5,8 @@ ENVIRONMENT=prod
 
 # Set the desired values for the backend configuration
 LOCATION=eastus
-RESOURCE_GROUP_NAME="rg"
-STORAGE_ACCOUNT_NAME="stac"
+RESOURCE_GROUP_NAME="rg-eus-docker-monitor"
+STORAGE_ACCOUNT_NAME="staclsomonitor"
 CONTAINER_NAME="states"
 KEY="$ENVIRONMENT.tfstate"
 
@@ -38,14 +38,6 @@ provider "azurerm" {
   features {
 
   }
-}
-
-provider "azurerm" {
-  features {
-
-  }
-  alias           = "management"
-  subscription_id = var.management_subscription_id
 }
 EOL
 
