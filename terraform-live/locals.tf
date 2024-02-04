@@ -41,4 +41,9 @@ locals {
   sta_monitoring_name = "stacappmon"
   ci_prometheus_name  = "ci-${local.region_name_standardize[var.default_location]}-prometheus-01"
 
+  apgw_pip_name         = "pip-${local.region_name_standardize[var.default_location]}-apgw-01"
+  pip_allocation_method = "Static"
+  apgw_name             = "apgw-${local.region_name_standardize[var.default_location]}-01"
+
+  appgw_frontend_ip_configuration_name = "frontend"
 }
