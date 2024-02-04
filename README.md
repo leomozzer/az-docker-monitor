@@ -80,59 +80,40 @@ This repository will be used as base to start a new terraform project or even us
 - Create an Azure container registry with:
 ```bash
 az group create --name rg-eus-acr-01 --location eastus
-az acr create --resource-group rg-eus-acr-01 --name acrleomozzerprod --sku Basic
+az acr create --resource-group rg-eus-acr-01 --name acrleomozzerprod --sku Basic --admin-enabled true
 az acr login --name acrleomozzerprod
-
-az network vnet create --resource-group rg-vnet-eus-spoke-application-01 --name vnet-eus-spoke-application-01
-az network vnet subnet create --resource-group rg-vnet-eus-spoke-application-01 --vnet-name vnet-eus-spoke-application-01 --name snet-application-01 --address-prefixes 10.0.16.0/24
 
 docker tag az-docker-monitor_app acrleomozzerprod.azurecr.io/app:latest
 docker push acrleomozzerprod.azurecr.io/app:latest
-
-az group create --name rg-eus-app-01 --location eastus
-
-az container create --resource-group rg-eus-app-01 --name app --image acrleomozzerprod.azurecr.io/app:latest --cpu 1 --memory 1 --ports 8080 --vnet vnet-eus-spoke-application-01 --subnet snet-application-01 
-
-az network public-ip create --resource-group rg-eus-app-01 --name pip-eus-apgw-01 --allocation-method Static
-
-az network application-gateway create --name apgw-eus-app-01 --location eastus --resource-group rg-eus-app-01 --capacity 2 --sku Standard_v2 --http-settings-protocol http --public-ip-address pip-eus-apgw-01 --vnet-name vnet-eus-spoke-application-01 --subnet snet-apgw-01 --servers 10.0.0.4 --priority 100 --http-settings-port 8080
-
-az storage account create --resource-group rg-eus-app-01 --name staeusapp --sku Standard_LRS --kind storagev2
-
-az storage account show-connection-string \
-  --resource-group rg-eus-monitor-01 \
-  --name stacappmon \
-  --output table
-
-az storage share create --name prometheus --connection-string "<>"
-
-az storage file upload --share-name prometheus --source ./prometheus/prometheus.yml --path prometheus.yml --connection-string "<>"
-
-az container create -g rg-eus-app-01 --name aci-prometheus-01 --image prom/prometheus:latest --azure-file-volume-share-name prometheus --azure-file-volume-account-name staeusapp --azure-file-volume-account-key "<>" --azure-file-volume-mount-path /etc/prometheus --cpu 1 --memory 1 --ports 9090 --vnet vnet-eus-spoke-application-01 --subnet snet-application-01
-
-az network nsg create --resource-group rg-eus-app-01 --name nsg-eus-app-01
-
-az container restart --resource-group rg-acr-prod --name prometheus --image acrleomozzerprod.azurecr.io/prometheus:latest
-
-az network application-gateway http-listener create \
-  --resource-group rg-acr-prod \
-  --gateway-name myAppGateway \
-  --name prometheus \
-  --frontend-ip-name myPublicIP \
-  --frontend-port 9090 \
-  --protocol Http
-
-docker tag grafana/grafana acrleomozzerprod.azurecr.io/grafana:latest
-docker push acrleomozzerprod.azurecr.io/grafana:latest
-az container create \
-  --resource-group rg-acr-prod \
-  --name grafana \
-  --image acrleomozzerprod.azurecr.io/grafana:latest \
-  --cpu 1 \
-  --memory 1 \
-  --ports 3000 \
-  --ip-address public
 ```
+- Create a Virtual Network:
+```bash
+#Also it's possible to use an existing one
+az network vnet create --resource-group rg-vnet-eus-spoke-application-01 --name vnet-eus-spoke-application-01
+az network vnet subnet create --resource-group rg-vnet-eus-spoke-application-01 --vnet-name vnet-eus-spoke-application-01 --name snet-application-01 --address-prefixes 10.0.16.0/24
+```
+- Create a {env}.tfvars file
+```terraform
+//prod.tfvars
+vnet_application = {
+  resource_group_name = "rg-vnet-eus-spoke-application-01"
+  vnet_name           = "vnet-eus-spoke-application-01"
+  subnet_name         = "snet-application-01"
+}
+acg_configuration = {
+  name           = "acrleomozzerprod"
+  resource_group = "rg-eus-acr-01"
+}
+```
+- Allow the script terraform-backend.sh with `chmod +x ./scripts/terraform-backend.sh`
+- Allow the script terraform-plan.sh with `chmod +x ./scripts/terraform-plan.sh`
+- Allow the script terraform-apply.sh with `chmod +x ./scripts/terraform-apply.sh`
+- Allow the script prometheus-configuration.sh with `chmod +x ./scripts/prometheus-configuration.sh`
+- Run `./scripts/terraform-backend.sh`
+- Run `./scripts/terraform-plan.sh`
+- Check the output
+- Run `./scripts/terraform-apply.sh`
+- Run `./scripts/prometheus-configuration.sh`
 
 ## References
 - https://github.com/evandroferreiras/prometheus_tutorial/tree/master
