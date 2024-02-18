@@ -1,7 +1,6 @@
-resource "azurerm_resource_group" "rg_app" {
-  name     = local.rg_app_name
-  location = var.default_location
-}
+#############################
+# Monitoring Infrastructure #
+#############################
 
 resource "azurerm_resource_group" "rg_monitoring" {
   name     = local.rg_monitoring_name
@@ -23,26 +22,12 @@ resource "azurerm_storage_share" "prometheus_fs" {
   quota                = 10
 }
 
-resource "azurerm_subnet" "subnet" {
-  name                 = local.snet_monitoring
-  resource_group_name  = data.azurerm_virtual_network.vnet_application.resource_group_name
-  virtual_network_name = data.azurerm_virtual_network.vnet_application.name
-  address_prefixes     = ["10.0.17.0/28"]
-  delegation {
-    name = "delegation"
-    service_delegation {
-      name    = "Microsoft.ContainerInstance/containerGroups"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action", "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"]
-    }
-  }
-}
-
 resource "azurerm_container_group" "prometheus" {
   resource_group_name = azurerm_resource_group.rg_monitoring.name
   name                = local.ci_prometheus_name
   location            = var.default_location
   os_type             = "Linux"
-  subnet_ids          = [azurerm_subnet.subnet.id]
+  subnet_ids          = [azurerm_subnet.subnet_monitoring.id]
   ip_address_type     = "Private"
 
   container {
@@ -66,13 +51,49 @@ resource "azurerm_container_group" "prometheus" {
   }
 }
 
+resource "azurerm_container_group" "grafana" {
+  resource_group_name = azurerm_resource_group.rg_monitoring.name
+  name                = local.ci_grafana_name
+  location            = var.default_location
+  os_type             = "Linux"
+  subnet_ids          = [azurerm_subnet.subnet_monitoring.id]
+  ip_address_type     = "Private"
+
+  container {
+    name   = "grafana"
+    image  = "grafana/grafana:latest"
+    cpu    = "1.5"
+    memory = "1"
+
+    environment_variables = {
+      GF_SECURITY_ADMIN_USER     = "admin"
+      GF_SECURITY_ADMIN_PASSWORD = "admin"
+      GF_USERS_ALLOW_SIGN_UP     = false
+    }
+
+    ports {
+      port     = 3000
+      protocol = "TCP"
+    }
+  }
+}
+
+############################
+# Monitored Infrastructure #
+############################
+
+resource "azurerm_resource_group" "rg_app_01" {
+  name     = local.rg_app_name
+  location = var.default_location
+}
+
 resource "azurerm_container_group" "app_01" {
-  #Deploying app in the same subvnet as the prometheus
-  resource_group_name = azurerm_resource_group.rg_app.name
+  #Deploying app in the same subnet as the prometheus
+  resource_group_name = azurerm_resource_group.rg_app_01.name
   name                = local.ci_app_name_01
   location            = var.default_location
   os_type             = "Linux"
-  subnet_ids          = [azurerm_subnet.subnet.id]
+  subnet_ids          = [azurerm_subnet.subnet_monitoring.id]
   ip_address_type     = "Private"
 
   image_registry_credential {
@@ -93,6 +114,10 @@ resource "azurerm_container_group" "app_01" {
     }
   }
 }
+
+##########################
+# Accessing applications #
+##########################
 
 resource "azurerm_public_ip" "apgw_pip" {
   name                = local.apgw_pip_name
@@ -120,9 +145,10 @@ resource "azurerm_application_gateway" "apgw" {
 
   gateway_ip_configuration {
     name      = "my-gateway-ip-configuration"
-    subnet_id = data.azurerm_subnet.subnet_application.id
+    subnet_id = azurerm_subnet.subnet_appgw.id
   }
 
+  #app-01 routing
   frontend_port {
     name = "application"
     port = 8080
@@ -158,6 +184,7 @@ resource "azurerm_application_gateway" "apgw" {
     backend_http_settings_name = "application"
   }
 
+  #Prometheus routing
   frontend_port {
     name = "prometheus"
     port = 9090
@@ -191,5 +218,41 @@ resource "azurerm_application_gateway" "apgw" {
     http_listener_name         = "prometheus"
     backend_address_pool_name  = "prometheus"
     backend_http_settings_name = "prometheus"
+  }
+
+  #Grafana routing
+  frontend_port {
+    name = "grafana"
+    port = 3000
+  }
+
+  backend_address_pool {
+    name         = "grafana"
+    ip_addresses = [azurerm_container_group.grafana.ip_address]
+  }
+
+  backend_http_settings {
+    name                  = "grafana"
+    cookie_based_affinity = "Disabled"
+    path                  = "/"
+    port                  = 3000
+    protocol              = "Http"
+    request_timeout       = 60
+  }
+
+  http_listener {
+    name                           = "grafana"
+    frontend_ip_configuration_name = "frontend"
+    frontend_port_name             = "grafana"
+    protocol                       = "Http"
+  }
+
+  request_routing_rule {
+    name                       = "grafana"
+    priority                   = 120
+    rule_type                  = "Basic"
+    http_listener_name         = "grafana"
+    backend_address_pool_name  = "grafana"
+    backend_http_settings_name = "grafana"
   }
 }

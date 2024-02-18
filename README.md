@@ -86,23 +86,25 @@ az acr login --name acrleomozzerprod
 docker tag az-docker-monitor_app acrleomozzerprod.azurecr.io/app:latest
 docker push acrleomozzerprod.azurecr.io/app:latest
 ```
-- Create a Virtual Network:
+- Create a Virtual Network (optional):
 ```bash
 #Also it's possible to use an existing one
-az network vnet create --resource-group rg-vnet-eus-spoke-application-01 --name vnet-eus-spoke-application-01
-az network vnet subnet create --resource-group rg-vnet-eus-spoke-application-01 --vnet-name vnet-eus-spoke-application-01 --name snet-application-01 --address-prefixes 10.0.16.0/24
+az network vnet create --resource-group rg-vnet-eus-spoke-monitoring-01 --name vnet-eus-spoke-monitoring-01
+az network vnet subnet create --resource-group rg-vnet-eus-spoke-monitoring-01 --vnet-name vnet-eus-spoke-monitoring-01 --name snet-monitoring-01 --address-prefixes 10.140.15.0/26
 ```
 - Create a {env}.tfvars file
 ```terraform
 //prod.tfvars
+#optional to add existing vnet
 vnet_application = {
-  resource_group_name = "rg-vnet-eus-spoke-application-01"
-  vnet_name           = "vnet-eus-spoke-application-01"
-  subnet_name         = "snet-application-01"
+  resource_group_name = "<vnet-resource-group-name>"
+  vnet_name           = "<vnet-name>"
+  subnet_name         = "<subnet-name>"
 }
+#required
 acg_configuration = {
-  name           = "acrleomozzerprod"
-  resource_group = "rg-eus-acr-01"
+  name           = "<acr-name>"
+  resource_group = "<acr-resource-group-name>"
 }
 ```
 - Allow the script terraform-backend.sh with `chmod +x ./scripts/terraform-backend.sh`

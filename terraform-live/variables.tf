@@ -9,6 +9,11 @@ variable "vnet_application" {
     vnet_name           = string
     subnet_name         = string
   })
+  default = {
+    resource_group_name = ""
+    vnet_name           = ""
+    subnet_name         = ""
+  }
 }
 
 variable "acg_configuration" {
