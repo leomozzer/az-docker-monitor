@@ -19,15 +19,19 @@ This repository will be used as base to start a new terraform project or even us
       ├──📜terraform-deply-bash.yml
       └──📜terraform-plan.yml
 📂scripts
-  ├──📜terraform-apply.tf
-  ├──📜terraform-backend-local.tf
-  ├──📜terraform-backend.tf
-  ├──📜terraform-destoy.tf
-  └──📜terraform-plan.tf
+  ├──📜yprometheus-configuration.sh
+  ├──📜terraform-apply.sh
+  ├──📜terraform-backend-local.sh
+  ├──📜terraform-backend.sh
+  ├──📜terraform-destoy.sh
+  ├──📜terraform-plan.sh
+  └──📜terraform-save-tfvars.sh
 📂terraform-main
+  ├──📜datasource.tf
+  ├──📜locals.tf
   ├──📜main.tf
-  ├──📜outputs.tf
-  └──📜variables.tf
+  ├──📜variables.tf
+  └──📜vnet.tf
 📂terraform-modules
   └──📂module1
       ├──📜main.tf
@@ -68,7 +72,7 @@ This repository will be used as base to start a new terraform project or even us
   PLAN_FILE=$ENVIRONMENT.plan
   STORAGE_ACCOUNT_NAME=stac #storage account where the state files will be saved
   ```
-- Make sure that the secrets below are configured and available:
+- Make sure that the secrets in the repository are configured and available:
    - AZURE_SP
    - ARM_CLIENT_ID
    - ARM_CLIENT_SECRET
