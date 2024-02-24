@@ -5,8 +5,8 @@ ENVIRONMENT=prod
 
 # Set the desired values for the backend configuration
 LOCATION=eastus
-RESOURCE_GROUP_NAME="rg-eus-docker-monitor"
-STORAGE_ACCOUNT_NAME="staclsomonitor"
+RESOURCE_GROUP_NAME="rg-eus-tfstate-monitoring"
+STORAGE_ACCOUNT_NAME="stactfomonitor"
 CONTAINER_NAME="states"
 KEY="$ENVIRONMENT.tfstate"
 

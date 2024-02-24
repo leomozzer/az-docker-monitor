@@ -88,7 +88,7 @@ resource "azurerm_resource_group" "rg_app_01" {
 }
 
 resource "azurerm_container_group" "app_01" {
-  #Deploying app in the same subnet as the prometheus
+  #Deploying app in the same subnet as the monitoring
   resource_group_name = azurerm_resource_group.rg_app_01.name
   name                = local.ci_app_name_01
   location            = var.default_location

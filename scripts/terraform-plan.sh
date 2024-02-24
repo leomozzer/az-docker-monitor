@@ -2,10 +2,30 @@
 
 WORKING_DIR=./terraform-live
 ENVIRONMENT=prod
-STORAGE_ACCOUNT_NAME="staclsomonitor"
+STORAGE_ACCOUNT_NAME="stactfomonitor"
 
 VAR_FILE=$ENVIRONMENT.tfvars
 PLAN_FILE=$ENVIRONMENT.plan
+
+# Check if required environment variables are set
+if [[ -z "$ENVIRONMENT" || -z "$STORAGE_ACCOUNT_NAME" ]]; then
+  echo "Error: Please set the required environment variables: ENVIRONMENT and STORAGE_ACCOUNT_NAME"
+  exit 1
+fi
+
+# Check if the blob exists using az storage blob exists command
+az storage blob exists \
+  --account-name "$STORAGE_ACCOUNT_NAME" \
+  --container-name "$ENVIRONMENT-tf-files" \
+  --name $VAR_FILE
+
+# Get the exit code from the previous command
+exit_code=$?
+
+if [[ $exit_code -ne 0 ]]; then
+  echo "Error: Blob $ENVIRONMENT.tfvars not found in container $ENVIRONMENT-tf-files"
+  exit 1
+fi
 
 # Change to the Terraform directory
 cd $WORKING_DIR

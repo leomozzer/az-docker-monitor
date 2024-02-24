@@ -76,46 +76,51 @@ This repository will be used as base to start a new terraform project or even us
    - ARM_TENANT_ID
 
 ## Configuring
+- Make sure you're logged with az cli
+- Allow the script terraform-backend.sh with `chmod +x ./scripts/terraform-backend.sh`
+- Create the prod.tfvars (or the respective environment like dev.tfvars, test.tfvars, etc)
+```terraform
+//prod.tfvars
+#optional to add existing vnet
+# vnet_application = {
+#   resource_group_name = "rg-vnet-eus-spoke-application-01"
+#   vnet_name           = "vnet-eus-spoke-application-01"
+#   subnet_name         = "snet-application-01"
+# }
+acg_configuration = {
+  name           = "<container-registry-name>"
+  resource_group = "rg-eus-acr-01"
+}
+```
+- Allow the script terraform-plan.sh with `chmod +x ./scripts/terraform-save-tfvars.sh`, or upload the file directly in the container
+- Run the script `./scripts/terraform-save-tfvars.sh`
 - Run `docker-compose up --build` to validate if the services are running correctly
 - Create an Azure container registry with:
 ```bash
 az group create --name rg-eus-acr-01 --location eastus
-az acr create --resource-group rg-eus-acr-01 --name acrleomozzerprod --sku Basic --admin-enabled true
-az acr login --name acrleomozzerprod
+az acr create --resource-group rg-eus-acr-01 --name <container-registry-name> --sku Basic --admin-enabled true
+az acr login --name <container-registry-name>
 
-docker tag az-docker-monitor_app acrleomozzerprod.azurecr.io/app:latest
-docker push acrleomozzerprod.azurecr.io/app:latest
+docker tag az-docker-monitor_app <container-registry-name>.azurecr.io/app:latest
+docker push <container-registry-name>.azurecr.io/app:latest
 ```
+- Allow the script terraform-plan.sh with `chmod +x ./scripts/terraform-plan.sh`
+- Allow the script terraform-apply.sh with `chmod +x ./scripts/terraform-apply.sh`
+- Allow the script prometheus-configuration.sh with `chmod +x ./scripts/prometheus-configuration.sh`
+- Run `./scripts/terraform-plan.sh`
+- Check the output
+- Run `./scripts/terraform-apply.sh`
+- Run `./scripts/prometheus-configuration.sh`
+- Access the Application Gateway Public IP
+  - Port 8080 to access the app
+  - Port 9090 to access Prometheus
+  - Port 3000 to access Grafana
 - Create a Virtual Network (optional):
 ```bash
 #Also it's possible to use an existing one
 az network vnet create --resource-group rg-vnet-eus-spoke-monitoring-01 --name vnet-eus-spoke-monitoring-01
 az network vnet subnet create --resource-group rg-vnet-eus-spoke-monitoring-01 --vnet-name vnet-eus-spoke-monitoring-01 --name snet-monitoring-01 --address-prefixes 10.140.15.0/26
 ```
-- Create a {env}.tfvars file
-```terraform
-//prod.tfvars
-#optional to add existing vnet
-vnet_application = {
-  resource_group_name = "<vnet-resource-group-name>"
-  vnet_name           = "<vnet-name>"
-  subnet_name         = "<subnet-name>"
-}
-#required
-acg_configuration = {
-  name           = "<acr-name>"
-  resource_group = "<acr-resource-group-name>"
-}
-```
-- Allow the script terraform-backend.sh with `chmod +x ./scripts/terraform-backend.sh`
-- Allow the script terraform-plan.sh with `chmod +x ./scripts/terraform-plan.sh`
-- Allow the script terraform-apply.sh with `chmod +x ./scripts/terraform-apply.sh`
-- Allow the script prometheus-configuration.sh with `chmod +x ./scripts/prometheus-configuration.sh`
-- Run `./scripts/terraform-backend.sh`
-- Run `./scripts/terraform-plan.sh`
-- Check the output
-- Run `./scripts/terraform-apply.sh`
-- Run `./scripts/prometheus-configuration.sh`
 
 ## References
 - https://github.com/evandroferreiras/prometheus_tutorial/tree/master
