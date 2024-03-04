@@ -14,10 +14,17 @@ cd $WORKING_DIR
 
 az group create --location $LOCATION --resource-group $RESOURCE_GROUP_NAME
 az storage account create --resource-group $RESOURCE_GROUP_NAME --name $STORAGE_ACCOUNT_NAME --sku Standard_LRS --kind StorageV2 --encryption-services blob --access-tier Cool --allow-blob-public-access false
-az storage container create --name states --account-name $STORAGE_ACCOUNT_NAME
-az storage container create --name plans --account-name $STORAGE_ACCOUNT_NAME
+
+# Retrieve the storage account key using the Azure CLI
+account_key=$(az storage account keys list -n $STORAGE_ACCOUNT_NAME -g $RESOURCE_GROUP_NAME --query '[0].value' -o tsv)
+
+az storage container create --name states --account-name $STORAGE_ACCOUNT_NAME --account-key $account_key
+az storage container create --name plans --account-name $STORAGE_ACCOUNT_NAME --account-key $account_key
 # 
-az storage container create --name $ENVIRONMENT-tf-files --account-name $STORAGE_ACCOUNT_NAME
+az storage container create --name $ENVIRONMENT-tf-files --account-name $STORAGE_ACCOUNT_NAME --account-key $account_key
+
+# Wait for 60 seconds
+sleep 60
 
 # Create the backend.tf file
 cat <<EOL > backend.tf
@@ -47,11 +54,13 @@ az storage blob upload \
     --file provider.tf \
     --name provider.tf \
     --account-name $STORAGE_ACCOUNT_NAME \
-    --overwrite
+    --overwrite \
+    --account-key $account_key
 
 az storage blob upload \
     --container-name $ENVIRONMENT-tf-files \
     --file backend.tf \
     --name backend.tf \
     --account-name $STORAGE_ACCOUNT_NAME \
-    --overwrite
+    --overwrite \
+    --account-key $account_key

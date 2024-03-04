@@ -82,6 +82,13 @@ This repository will be used as base to start a new terraform project or even us
 ## Configuring
 - Make sure you're logged with az cli
 - Allow the script terraform-backend.sh with `chmod +x ./scripts/terraform-backend.sh`
+- Run the script `./scripts/terraform-backend.sh`
+- Create an Azure Container Registry with:
+```bash
+az group create --name rg-eus-acr-01 --location eastus
+az acr create --resource-group rg-eus-acr-01 --name <container-registry-name> --sku Basic --admin-enabled true
+az acr login --name <container-registry-name>
+```
 - Create the prod.tfvars (or the respective environment like dev.tfvars, test.tfvars, etc)
 ```terraform
 //prod.tfvars
@@ -99,11 +106,8 @@ acg_configuration = {
 - Allow the script terraform-plan.sh with `chmod +x ./scripts/terraform-save-tfvars.sh`, or upload the file directly in the container
 - Run the script `./scripts/terraform-save-tfvars.sh`
 - Run `docker-compose up --build` to validate if the services are running correctly
-- Create an Azure container registry with:
+- Push the image to Azure Container Registry
 ```bash
-az group create --name rg-eus-acr-01 --location eastus
-az acr create --resource-group rg-eus-acr-01 --name <container-registry-name> --sku Basic --admin-enabled true
-az acr login --name <container-registry-name>
 
 docker tag az-docker-monitor_app <container-registry-name>.azurecr.io/app:latest
 docker push <container-registry-name>.azurecr.io/app:latest
